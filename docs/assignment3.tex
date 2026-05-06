@@ -1,0 +1,1221 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage[margin=1in]{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{verbatim}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  numbers=left,
+  numberstyle=\tiny,
+  keywordstyle=\color{blue},
+  commentstyle=\color{gray},
+  showstringspaces=false
+}
+
+\title{IN4140 -- Assignment 3}
+\author{John Ravndal}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+This report solves Assignment~3 in IN4140 (dynamics of the simplified CrustCrawler). Task~1 derives a two-link Euler--Lagrange model by hand. Task~2 implements the three-link kinetic and potential energy, the inertia matrix $D(q)$, the Coriolis matrix $C(q,\dot q)$, the gravity vector $g(q)$, and the torque model $\tau = D(q)\ddot q + C(q,\dot q)\dot q + g(q)$ in SymPy, following the textbook equations cited in the assignment.
+
+Link lengths are reused from earlier assignments: $L_1 = 100.9$\,mm, $L_2 = 222.1$\,mm, $L_3 = 136.2$\,mm (converted to metres in code). Masses for Task~2 are $m_1 = 0.3833$\,kg, $m_2 = 0.2724$\,kg, $m_3 = 0.1406$\,kg.
+
+\section{Task 1 -- Dynamics I (two-link model)}
+
+\subsection*{(a) From the Lagrangian to Newton's equation}
+
+Take the generalized coordinate $q = y$ (vertical position of the particle, positive upward). Kinetic and potential energy are
+\begin{equation}
+    \mathcal{K} = \tfrac{1}{2} m \dot y^2,
+    \qquad
+    \mathcal{P} = m g y,
+\end{equation}
+with constant $g>0$. The Lagrangian is $\mathcal{L} = \mathcal{K} - \mathcal{P} = \tfrac{1}{2} m \dot y^2 - m g y$.
+
+Start from Newton's equation (assignment eq.~(7)):
+\begin{equation}
+    m \ddot y = f - m g.
+\end{equation}
+We now rewrite each term in the Euler--Lagrange form.
+
+\paragraph{Rewrite $m\ddot y$ using $\mathcal{K}$.}
+Since $\mathcal{K} = \tfrac{1}{2}m\dot y^2$, we have
+\begin{equation}
+    \frac{\partial \mathcal{K}}{\partial \dot y} = m \dot y,
+    \qquad\Rightarrow\qquad
+    \frac{\mathrm{d}}{\mathrm{d}t}\frac{\partial \mathcal{K}}{\partial \dot y} = m \ddot y.
+\end{equation}
+
+\paragraph{Rewrite $mg$ using $\mathcal{P}$.}
+Since $\mathcal{P} = mgy$, we have
+\begin{equation}
+    \frac{\partial \mathcal{P}}{\partial y} = mg.
+\end{equation}
+
+\paragraph{Rewrite $f$ as the generalized force.}
+With $q=y$, the generalized force along $y$ is $\tau = f$.
+
+Putting these together gives
+\begin{equation}
+    \frac{\mathrm{d}}{\mathrm{d}t}\frac{\partial \mathcal{K}}{\partial \dot y}
+    =
+    \tau - \frac{\partial \mathcal{P}}{\partial y}.
+\end{equation}
+Using $\mathcal{L}=\mathcal{K}-\mathcal{P}$, this is equivalent to the Euler--Lagrange equation (assignment eq.~(5) with $k=1$):
+\begin{equation}
+    \frac{\mathrm{d}}{\mathrm{d}t}\frac{\partial \mathcal{L}}{\partial \dot y} - \frac{\partial \mathcal{L}}{\partial y} = \tau,
+\end{equation}
+where $\tau=f$.
+
+\subsection*{(b) Lagrangian for the simplified two-link CrustCrawler}
+
+The generalized coordinates for the simplified two-link CrustCrawler are chosen as
+\[
+q = \begin{bmatrix}\theta_1 & \theta_2\end{bmatrix}^T.
+\]
+The Lagrangian is given by
+\[
+L = K - P,
+\]
+where \(K\) is the total kinetic energy and \(P\) is the total potential energy (IN4140 Assignment~3 course text, e.g.\ \texttt{Assignment3\_v26.pdf}).
+
+\subsubsection*{Potential Energy}
+
+The first link is modeled as a vertical cylinder with mass \(m_1\), height \(L_1\), and radius \(r_1\). Its center of mass is located halfway along the cylinder, such that
+\[
+p_{c1} = \begin{bmatrix}0 \\ 0 \\ L_1/2\end{bmatrix}.
+\]
+Hence, its potential energy is
+\[
+P_1 = m_1 g \frac{L_1}{2}.
+\]
+
+The second link is modeled as a point mass \(m_2\) located at the end of the link of length \(L_2\). Its position in the base frame is
+\[
+p_2 =
+\begin{bmatrix}
+L_2 \cos\theta_2 \cos\theta_1 \\
+L_2 \cos\theta_2 \sin\theta_1 \\
+L_1 + L_2 \sin\theta_2
+\end{bmatrix}.
+\]
+The height of the point mass is therefore
+\[
+h_2 = L_1 + L_2\sin\theta_2,
+\]
+which gives the potential energy
+\[
+P_2 = m_2 g (L_1 + L_2\sin\theta_2).
+\]
+
+The total potential energy becomes
+\[
+P = P_1 + P_2
+= \frac{1}{2}m_1 g L_1 + m_2 g L_1 + m_2 g L_2 \sin\theta_2.
+\]
+
+\subsubsection*{Kinetic Energy}
+
+For the first link, the center of mass remains fixed in space, so the translational kinetic energy is zero. The link rotates about the \(z\)-axis with angular velocity
+\[
+\omega_1 = \begin{bmatrix}0 \\ 0 \\ \dot{\theta}_1\end{bmatrix}.
+\]
+Only the \(zz\)-component of the inertia tensor is retained, with
+\[
+I_{1,zz} = \frac{m_1 r_1^2}{2}.
+\]
+Thus, the kinetic energy of the first link is
+\[
+K_1 = \frac{1}{2} I_{1,zz} \dot{\theta}_1^2
+= \frac{1}{2}\left(\frac{m_1 r_1^2}{2}\right)\dot{\theta}_1^2
+= \frac{m_1 r_1^2}{4}\dot{\theta}_1^2.
+\]
+
+For the second link, modeled as a point mass, only translational kinetic energy is included. Differentiating \(p_2\) with respect to time gives
+\[
+\dot{p}_2 =
+\begin{bmatrix}
+-L_2 \sin\theta_2 \cos\theta_1 \dot{\theta}_2
+- L_2 \cos\theta_2 \sin\theta_1 \dot{\theta}_1 \\
+-L_2 \sin\theta_2 \sin\theta_1 \dot{\theta}_2
++ L_2 \cos\theta_2 \cos\theta_1 \dot{\theta}_1 \\
+L_2 \cos\theta_2 \dot{\theta}_2
+\end{bmatrix}.
+\]
+The squared velocity magnitude is
+\[
+\dot{p}_2^T \dot{p}_2
+= L_2^2 \cos^2\theta_2 \dot{\theta}_1^2 + L_2^2 \dot{\theta}_2^2.
+\]
+Therefore, the kinetic energy of the second link is
+\[
+K_2 = \frac{1}{2} m_2 \dot{p}_2^T \dot{p}_2
+= \frac{1}{2} m_2 L_2^2 \cos^2\theta_2 \dot{\theta}_1^2
++ \frac{1}{2} m_2 L_2^2 \dot{\theta}_2^2.
+\]
+
+The total kinetic energy is
+\[
+K = K_1 + K_2
+= \frac{m_1 r_1^2}{4}\dot{\theta}_1^2
++ \frac{1}{2} m_2 L_2^2 \cos^2\theta_2 \dot{\theta}_1^2
++ \frac{1}{2} m_2 L_2^2 \dot{\theta}_2^2.
+\]
+
+\subsubsection*{Lagrangian}
+
+The Lagrangian is obtained as
+\[
+L = K - P.
+\]
+Substituting the expressions for \(K\) and \(P\) yields
+\[
+L =
+\frac{m_1 r_1^2}{4}\dot{\theta}_1^2
++ \frac{1}{2} m_2 L_2^2 \cos^2\theta_2 \dot{\theta}_1^2
++ \frac{1}{2} m_2 L_2^2 \dot{\theta}_2^2
+- \frac{1}{2} m_1 g L_1
+- m_2 g L_1
+- m_2 g L_2 \sin\theta_2.
+\]
+
+This is the Lagrangian for the simplified two-link CrustCrawler on fully expanded, non-factorized form.
+
+
+\subsection*{(c) Deriving the dynamical model}
+
+This is the dynamical model of the simplified two-link CrustCrawler. The generalized coordinates are chosen as the Denavit--Hartenberg joint variables.
+In this task, \(q_1\) denotes the base rotation and \(q_2\) denotes the elevation angle of the second link. For compact notation,
+\[
+c_i = \cos q_i,\qquad s_i = \sin q_i.
+\]
+
+\subsubsection*{Linear Velocity Jacobians}
+
+The center of mass of link 1 is located at
+\[
+p_{c1} =
+\begin{bmatrix}
+0\\
+0\\
+L_1/2
+\end{bmatrix}.
+\]
+Since this point lies on the first joint axis, it is independent of both \(q_1\) and \(q_2\). Hence,
+\[
+J_{v_{c1}}(q)
+=
+\frac{\partial p_{c1}}{\partial q}
+=
+\begin{bmatrix}
+0 & 0\\
+0 & 0\\
+0 & 0
+\end{bmatrix},
+\qquad
+v_{c1}=J_{v_{c1}}(q)\dot q=
+\begin{bmatrix}
+0\\
+0\\
+0
+\end{bmatrix}.
+\]
+
+The second link is modeled as a point mass \(m_2\) located at the end of the link. Its position in the base frame is
+\[
+p_{c2} =
+\begin{bmatrix}
+L_2 c_1 c_2\\
+L_2 s_1 c_2\\
+L_1 + L_2 s_2
+\end{bmatrix}.
+\]
+Therefore,
+\[
+J_{v_{c2}}(q)
+=
+\frac{\partial p_{c2}}{\partial q}
+=
+\begin{bmatrix}
+- L_2 s_1 c_2 & -L_2 c_1 s_2\\
+\;\;L_2 c_1 c_2 & -L_2 s_1 s_2\\
+0 & L_2 c_2
+\end{bmatrix},
+\qquad
+v_{c2}=J_{v_{c2}}(q)\dot q.
+\]
+
+\subsubsection*{Translational Part of the Kinetic Energy}
+
+The translational kinetic energy is
+\[
+K_{\mathrm{trans}}
+=
+\frac{1}{2}\sum_{i=1}^{2} m_i v_{ci}^T v_{ci}
+=
+\frac{1}{2}\dot q^T
+\left\{
+\sum_{i=1}^{2} m_i J_{v_{ci}}(q)^T J_{v_{ci}}(q)
+\right\}\dot q.
+\]
+
+For link 1,
+\[
+m_1 J_{v_{c1}}^T J_{v_{c1}}
+=
+\begin{bmatrix}
+0 & 0\\
+0 & 0
+\end{bmatrix}.
+\]
+
+For link 2,
+\[
+J_{v_{c2}}^T J_{v_{c2}}
+=
+\begin{bmatrix}
+L_2^2 c_2^2 & 0\\
+0 & L_2^2
+\end{bmatrix},
+\]
+and therefore
+\[
+m_2 J_{v_{c2}}^T J_{v_{c2}}
+=
+m_2
+\begin{bmatrix}
+L_2^2 c_2^2 & 0\\
+0 & L_2^2
+\end{bmatrix}.
+\]
+
+Thus, the translational part of the kinetic energy can be written as
+\[
+K_{\mathrm{trans}}
+=
+\frac{1}{2}\dot q^T
+\left\{
+m_2
+\begin{bmatrix}
+L_2^2 c_2^2 & 0\\
+0 & L_2^2
+\end{bmatrix}
+\right\}\dot q.
+\]
+
+\subsubsection*{Angular Velocity Terms}
+
+The angular velocity Jacobian of link 1 is
+\[
+J_{\omega_1}(q)
+=
+\begin{bmatrix}
+0 & 0\\
+0 & 0\\
+1 & 0
+\end{bmatrix},
+\]
+since only the first joint contributes to the angular velocity of the first link.
+
+The inertia tensor of link 1 is simplified such that only the \(zz\)-component is retained:
+\[
+I_1=
+\begin{bmatrix}
+0 & 0 & 0\\
+0 & 0 & 0\\
+0 & 0 & I_{1,zz}
+\end{bmatrix},
+\qquad
+I_{1,zz}=\frac{m_1 r_1^2}{2}.
+\]
+
+The second link is modeled as a point mass and the assignment states that all of its inertia tensor is neglected, hence
+\[
+I_2 = 0.
+\]
+
+The rotational part of the kinetic energy is therefore
+\[
+K_{\mathrm{rot}}
+=
+\frac{1}{2}\dot q^T
+\left(
+J_{\omega_1}^T I_1 J_{\omega_1}
++
+J_{\omega_2}^T I_2 J_{\omega_2}
+\right)\dot q.
+\]
+Since \(I_2=0\), only the first term remains:
+\[
+J_{\omega_1}^T I_1 J_{\omega_1}
+=
+\begin{bmatrix}
+I_{1,zz} & 0\\
+0 & 0
+\end{bmatrix}.
+\]
+Hence,
+\[
+K_{\mathrm{rot}}
+=
+\frac{1}{2}\dot q^T
+\begin{bmatrix}
+I_{1,zz} & 0\\
+0 & 0
+\end{bmatrix}
+\dot q.
+\]
+
+\subsubsection*{Total Kinetic Energy and the Inertia Matrix \(D(q)\)}
+
+The total kinetic energy becomes
+\[
+K
+=
+K_{\mathrm{trans}} + K_{\mathrm{rot}}
+=
+\frac{1}{2}\dot q^T D(q)\dot q,
+\]
+with
+\[
+D(q)
+=
+\sum_{i=1}^{2}
+\left(
+m_i J_{v_{ci}}^T J_{v_{ci}} + J_{\omega_i}^T I_i J_{\omega_i}
+\right).
+\]
+
+Substituting the expressions above gives
+\[
+D(q)
+=
+\begin{bmatrix}
+0 & 0\\
+0 & 0
+\end{bmatrix}
++
+m_2
+\begin{bmatrix}
+L_2^2 c_2^2 & 0\\
+0 & L_2^2
+\end{bmatrix}
++
+\begin{bmatrix}
+I_{1,zz} & 0\\
+0 & 0
+\end{bmatrix}
++
+\begin{bmatrix}
+0 & 0\\
+0 & 0
+\end{bmatrix}.
+\]
+
+Using \(I_{1,zz}=\frac{m_1r_1^2}{2}\), this becomes
+\[
+D(q)
+=
+\begin{bmatrix}
+\frac{m_1r_1^2}{2} + m_2L_2^2 c_2^2 & 0\\
+0 & m_2L_2^2
+\end{bmatrix}.
+\]
+
+The matrix elements are therefore
+\[
+d_{11}(q)=\frac{m_1r_1^2}{2} + m_2L_2^2 c_2^2,
+\qquad
+d_{12}(q)=d_{21}(q)=0,
+\qquad
+d_{22}(q)=m_2L_2^2.
+\]
+
+\subsubsection*{Christoffel Symbols}
+
+The Christoffel symbols are given by
+\[
+c_{ijk}(q)
+=
+\frac{1}{2}
+\left(
+\frac{\partial d_{kj}}{\partial q_i}
++
+\frac{\partial d_{ki}}{\partial q_j}
+-
+\frac{\partial d_{ij}}{\partial q_k}
+\right).
+\]
+
+Since only \(d_{11}\) depends on \(q_2\),
+\[
+\frac{\partial d_{11}}{\partial q_2}
+=
+\frac{\partial}{\partial q_2}\left(m_2L_2^2 c_2^2\right)
+=
+-2m_2L_2^2 s_2 c_2.
+\]
+All other partial derivatives of \(d_{ij}\) are zero.
+
+The nonzero Christoffel symbols are thus
+\[
+c_{121} = -m_2L_2^2 s_2 c_2,
+\qquad
+c_{211} = -m_2L_2^2 s_2 c_2,
+\qquad
+c_{112} = m_2L_2^2 s_2 c_2.
+\]
+All remaining coefficients are zero:
+\[
+c_{111}=c_{122}=c_{212}=c_{221}=c_{222}=0.
+\]
+
+Using
+\[
+\sum_{i=1}^{2}\sum_{j=1}^{2} c_{ijk}(q)\dot q_i \dot q_j,
+\]
+the velocity-dependent terms become
+
+for \(k=1\):
+\[
+\sum_{i=1}^{2}\sum_{j=1}^{2} c_{ij1}\dot q_i \dot q_j
+=
+c_{121}\dot q_1\dot q_2 + c_{211}\dot q_2\dot q_1
+=
+-2m_2L_2^2 s_2 c_2 \dot q_1\dot q_2,
+\]
+and for \(k=2\):
+\[
+\sum_{i=1}^{2}\sum_{j=1}^{2} c_{ij2}\dot q_i \dot q_j
+=
+c_{112}\dot q_1^2
+=
+m_2L_2^2 s_2 c_2 \dot q_1^2.
+\]
+
+\subsubsection*{Potential Energy}
+
+The potential energy of link 1 is
+\[
+P_1 = m_1 g \frac{L_1}{2}.
+\]
+
+The potential energy of link 2 is
+\[
+P_2 = m_2 g (L_1 + L_2 s_2).
+\]
+
+Hence, the total potential energy is
+\[
+P = P_1 + P_2
+=
+\frac{1}{2}m_1 g L_1 + m_2 g L_1 + m_2 g L_2 s_2.
+\]
+
+\subsubsection*{Gravity Terms}
+
+The gravity terms are defined as
+\[
+g_k(q)=\frac{\partial P}{\partial q_k}.
+\]
+Thus,
+\[
+g_1(q)=\frac{\partial P}{\partial q_1}=0,
+\qquad
+g_2(q)=\frac{\partial P}{\partial q_2}=m_2gL_2c_2.
+\]
+Therefore,
+\[
+g(q)=
+\begin{bmatrix}
+0\\
+m_2gL_2c_2
+\end{bmatrix}.
+\]
+
+\subsubsection*{Equations of Motion}
+
+The equations of motion are written in the form
+\[
+\sum_{j=1}^{2} d_{kj}(q)\ddot q_j
++
+\sum_{i=1}^{2}\sum_{j=1}^{2} c_{ijk}(q)\dot q_i\dot q_j
++
+g_k(q)
+=
+\tau_k,
+\qquad k=1,2.
+\]
+
+For \(k=1\),
+\[
+\left(\frac{m_1r_1^2}{2} + m_2L_2^2 c_2^2\right)\ddot q_1
+-2m_2L_2^2 s_2 c_2 \dot q_1 \dot q_2
+=
+\tau_1.
+\]
+
+For \(k=2\),
+\[
+m_2L_2^2 \ddot q_2
++ m_2L_2^2 s_2 c_2 \dot q_1^2
++ m_2gL_2c_2
+=
+\tau_2.
+\]
+
+where
+\[
+D(q)
+=
+\begin{bmatrix}
+\frac{m_1r_1^2}{2} + m_2L_2^2 c_2^2 & 0\\
+0 & m_2L_2^2
+\end{bmatrix},
+\]
+\[
+C(q,\dot q)
+=
+\begin{bmatrix}
+0 & -2m_2L_2^2 s_2 c_2 \dot q_1\\
+m_2L_2^2 s_2 c_2 \dot q_1 & 0
+\end{bmatrix},
+\]
+and
+\[
+g(q)
+=
+\begin{bmatrix}
+0\\
+m_2gL_2c_2
+\end{bmatrix}.
+\]
+
+Hence, the dynamical model of the simplified two-link CrustCrawler is
+\[
+\begin{bmatrix}
+\frac{m_1r_1^2}{2} + m_2L_2^2 c_2^2 & 0\\
+0 & m_2L_2^2
+\end{bmatrix}
+\begin{bmatrix}
+\ddot q_1\\
+\ddot q_2
+\end{bmatrix}
++
+\begin{bmatrix}
+-2m_2L_2^2 s_2 c_2 \dot q_1\dot q_2\\
+m_2L_2^2 s_2 c_2 \dot q_1^2
+\end{bmatrix}
++
+\begin{bmatrix}
+0\\
+m_2gL_2c_2
+\end{bmatrix}
+=
+\begin{bmatrix}
+\tau_1\\
+\tau_2
+\end{bmatrix}.
+\]
+
+
+
+\section{Task 2 -- Dynamics II (three-link computation)}
+
+This task follows the computational recipe from the course material (Assignment~3, \texttt{Assignment3\_v26.pdf}): each link is a uniform body with mass centre at mid-link; principal inertias \(I_{i,x},I_{i,y},I_{i,z}\) are diagonal in the link COM frame as in eqs.~(9)--(11) of the assignment. The same standard Denavit--Hartenberg chain as in Assignment~1 is used (\(d_1=L_1\), \(\alpha_1=\pi/2\), \(a_2=L_2\), \(a_3=L_3\)). Lengths \(L_1,L_2,L_3\) and masses \(m_1,m_2,m_3\) are the numerical values from the introduction. The SymPy implementation is in \texttt{IN4140\_oblig3\_task2\_johnrav.py}; terminal output from a reference run is included at the end of this section.
+
+\subsection*{(a) Potential energy}
+
+The potential energy of the three-link manipulator is computed using
+\[
+P=\sum_{i=1}^{3} P_i=\sum_{i=1}^{3} m_i g^T r_{c_i},
+\]
+where \(r_{c_i}\) is the position vector from the base frame origin to the center of mass of link \(i\), expressed in the base frame.
+
+Using the same joint variables as in the previous assignments,
+\[
+q=\begin{bmatrix}q_1 & q_2 & q_3\end{bmatrix}^T,
+\]
+and the shorthand notation
+\[
+c_1=\cos q_1,\quad s_1=\sin q_1,\quad
+c_2=\cos q_2,\quad s_2=\sin q_2,\quad
+c_{23}=\cos(q_2+q_3),\quad s_{23}=\sin(q_2+q_3),
+\]
+the centers of mass are placed at the geometric centers of the links.
+
+For link 1, the center of mass is located halfway along the vertical link:
+\[
+r_{c1}=
+\begin{bmatrix}
+0\\
+0\\
+L_1/2
+\end{bmatrix}.
+\]
+
+For link 2, the center of mass is located halfway along link 2:
+\[
+r_{c2}=
+\begin{bmatrix}
+\frac{L_2}{2} c_1 c_2\\
+\frac{L_2}{2} s_1 c_2\\
+L_1+\frac{L_2}{2}s_2
+\end{bmatrix}.
+\]
+
+For link 3, the center of mass is located halfway along link 3:
+\[
+r_{c3}=
+\begin{bmatrix}
+c_1\left(L_2 c_2+\frac{L_3}{2}c_{23}\right)\\
+s_1\left(L_2 c_2+\frac{L_3}{2}c_{23}\right)\\
+L_1+L_2 s_2+\frac{L_3}{2}s_{23}
+\end{bmatrix}.
+\]
+
+Since only the height contributes to the gravitational potential energy, the three link contributions become
+\[
+P_1 = m_1 g \frac{L_1}{2},
+\]
+\[
+P_2 = m_2 g \left(L_1+\frac{L_2}{2}s_2\right),
+\]
+\[
+P_3 = m_3 g \left(L_1+L_2 s_2+\frac{L_3}{2}s_{23}\right).
+\]
+
+Hence, the total potential energy is
+\[
+P=P_1+P_2+P_3
+=
+m_1 g \frac{L_1}{2}
++
+m_2 g \left(L_1+\frac{L_2}{2}s_2\right)
++
+m_3 g \left(L_1+L_2 s_2+\frac{L_3}{2}s_{23}\right).
+\]
+
+Equivalently, this may be written as
+\[
+P
+=
+g\left[
+\left(\frac{m_1}{2}+m_2+m_3\right)L_1
++
+\left(\frac{m_2}{2}+m_3\right)L_2 s_2
++
+\frac{m_3}{2}L_3 s_{23}
+\right].
+\]
+
+\subsection*{(b) Kinetic energy and \(D(q)\)}
+
+The kinetic energy of the three-link manipulator is computed using
+\[
+K =
+\frac{1}{2}\dot q^T
+\left[
+\sum_{i=1}^{3}
+\left(
+m_i J_{v_i}(q)^T J_{v_i}(q)
++
+J_{\omega_i}(q)^T R_{M_i}(q)\, I_i\, R_{M_i}(q)^T J_{\omega_i}(q)
+\right)
+\right]\dot q
+\]
+which may be written as
+\[
+K=\frac{1}{2}\dot q^T D(q)\dot q,
+\]
+where \(D(q)\) is the inertia matrix.
+
+The center-of-mass positions from Task 2a are
+\[
+r_{c1}=
+\begin{bmatrix}
+0\\
+0\\
+L_1/2
+\end{bmatrix},
+\qquad
+r_{c2}=
+\begin{bmatrix}
+\frac{L_2}{2}c_1c_2\\
+\frac{L_2}{2}s_1c_2\\
+L_1+\frac{L_2}{2}s_2
+\end{bmatrix},
+\]
+\[
+r_{c3}=
+\begin{bmatrix}
+c_1\left(L_2c_2+\frac{L_3}{2}c_{23}\right)\\
+s_1\left(L_2c_2+\frac{L_3}{2}c_{23}\right)\\
+L_1+L_2s_2+\frac{L_3}{2}s_{23}
+\end{bmatrix}.
+\]
+
+\subsubsection*{Linear Velocity Jacobians}
+
+The linear velocity Jacobians are obtained from
+\[
+J_{v_i}(q)=\frac{\partial r_{c_i}}{\partial q}.
+\]
+
+For link 1,
+\[
+J_{v_1}(q)=
+\begin{bmatrix}
+0&0&0\\
+0&0&0\\
+0&0&0
+\end{bmatrix}.
+\]
+
+For link 2,
+\[
+J_{v_2}(q)=
+\begin{bmatrix}
+-\frac{L_2}{2}s_1c_2 & -\frac{L_2}{2}c_1s_2 & 0\\
+\frac{L_2}{2}c_1c_2 & -\frac{L_2}{2}s_1s_2 & 0\\
+0 & \frac{L_2}{2}c_2 & 0
+\end{bmatrix}.
+\]
+Hence,
+\[
+J_{v_2}(q)^T J_{v_2}(q)
+=
+\begin{bmatrix}
+\frac{L_2^2}{4}c_2^2 & 0 & 0\\
+0 & \frac{L_2^2}{4} & 0\\
+0 & 0 & 0
+\end{bmatrix}.
+\]
+
+For link 3,
+\[
+J_{v_3}(q)=
+\begin{bmatrix}
+- s_1\left(L_2c_2+\frac{L_3}{2}c_{23}\right) &
+- c_1\left(L_2s_2+\frac{L_3}{2}s_{23}\right) &
+-\frac{L_3}{2}c_1 s_{23}\\[4pt]
+c_1\left(L_2c_2+\frac{L_3}{2}c_{23}\right) &
+- s_1\left(L_2s_2+\frac{L_3}{2}s_{23}\right) &
+-\frac{L_3}{2}s_1 s_{23}\\[4pt]
+0 &
+L_2c_2+\frac{L_3}{2}c_{23} &
+\frac{L_3}{2}c_{23}
+\end{bmatrix}.
+\]
+This gives
+\[
+J_{v_3}(q)^T J_{v_3}(q)
+=
+\begin{bmatrix}
+\left(L_2c_2+\frac{L_3}{2}c_{23}\right)^2 & 0 & 0\\[6pt]
+0 &
+L_2^2+\frac{L_3^2}{4}+L_2L_3\cos q_3 &
+\frac{L_3^2}{4}+\frac{L_2L_3}{2}\cos q_3\\[6pt]
+0 &
+\frac{L_3^2}{4}+\frac{L_2L_3}{2}\cos q_3 &
+\frac{L_3^2}{4}
+\end{bmatrix}.
+\]
+
+The translational contribution to the inertia matrix is therefore
+\[
+D_{\mathrm{trans}}(q)
+=
+\sum_{i=1}^{3} m_i J_{v_i}(q)^T J_{v_i}(q),
+\]
+that is,
+\[
+D_{\mathrm{trans}}(q)
+=
+m_2
+\begin{bmatrix}
+\frac{L_2^2}{4}c_2^2 & 0 & 0\\
+0 & \frac{L_2^2}{4} & 0\\
+0 & 0 & 0
+\end{bmatrix}
++
+m_3
+\begin{bmatrix}
+\left(L_2c_2+\frac{L_3}{2}c_{23}\right)^2 & 0 & 0\\
+0 & L_2^2+\frac{L_3^2}{4}+L_2L_3\cos q_3 &
+\frac{L_3^2}{4}+\frac{L_2L_3}{2}\cos q_3\\
+0 & \frac{L_3^2}{4}+\frac{L_2L_3}{2}\cos q_3 &
+\frac{L_3^2}{4}
+\end{bmatrix}.
+\]
+
+\subsubsection*{Angular Velocity Jacobians}
+
+The angular velocity Jacobians are
+\[
+J_{\omega_1}(q)=
+\begin{bmatrix}
+0&0&0\\
+0&0&0\\
+1&0&0
+\end{bmatrix},
+\]
+\[
+J_{\omega_2}(q)=
+\begin{bmatrix}
+0&s_1&0\\
+0&-c_1&0\\
+1&0&0
+\end{bmatrix},
+\]
+\[
+J_{\omega_3}(q)=
+\begin{bmatrix}
+0&s_1&s_1\\
+0&-c_1&-c_1\\
+1&0&0
+\end{bmatrix}.
+\]
+
+The rotational contribution to the inertia matrix is
+
+\[
+D_{\mathrm{rot}}(q)
+=
+\sum_{i=1}^{3} J_{\omega_i}(q)^T R_{M_i}(q)\, I_i\, R_{M_i}(q)^T J_{\omega_i}(q),
+\]
+that is,
+\[
+D_{\mathrm{rot}}(q)
+=
+J_{\omega_1}(q)^T R_{M_1}(q)\, I_1\, R_{M_1}(q)^T J_{\omega_1}(q)
++
+J_{\omega_2}(q)^T R_{M_2}(q)\, I_2\, R_{M_2}(q)^T J_{\omega_2}(q)
++
+J_{\omega_3}(q)^T R_{M_3}(q)\, I_3\, R_{M_3}(q)^T J_{\omega_3}(q).
+\]
+
+\subsubsection*{Total Kinetic Energy and Inertia Matrix}
+
+The total inertia matrix is therefore
+\[
+D(q)=D_{\mathrm{trans}}(q)+D_{\mathrm{rot}}(q),
+\]
+or equivalently
+\[
+D(q)=
+\sum_{i=1}^{3}
+\left(
+m_i J_{v_i}(q)^T J_{v_i}(q)
++
+J_{\omega_i}(q)^T R_{M_i}(q)\, I_i\, R_{M_i}(q)^T J_{\omega_i}(q)
+\right).
+\]
+
+Hence, the kinetic energy of the three-link manipulator may be written as
+\[
+K=\frac{1}{2}\dot q^T D(q)\dot q.
+\]
+
+\subsection*{(c) Equations of motion and physical meaning}
+
+The equation of motion for an \(n\)-link manipulator may be written in matrix form as
+\[
+D(q)\ddot q + C(q,\dot q)\dot q + g(q)=\tau.
+\]
+The assignment asks to show that this expression is equivalent to the componentwise form
+\[
+\sum_{j=1}^{n} d_{kj}(q)\ddot q_j
++
+\sum_{i=1}^{n}\sum_{j=1}^{n} c_{ijk}(q)\dot q_i \dot q_j
++
+g_k(q)
+=
+\tau_k,
+\qquad k=1,\dots,n.
+\]
+
+To show this, let the inertia matrix be written as
+\[
+D(q)=
+\begin{bmatrix}
+d_{11}(q) & d_{12}(q) & \cdots & d_{1n}(q)\\
+d_{21}(q) & d_{22}(q) & \cdots & d_{2n}(q)\\
+\vdots & \vdots & \ddots & \vdots\\
+d_{n1}(q) & d_{n2}(q) & \cdots & d_{nn}(q)
+\end{bmatrix},
+\]
+and let
+\[
+\ddot q=
+\begin{bmatrix}
+\ddot q_1\\
+\ddot q_2\\
+\vdots\\
+\ddot q_n
+\end{bmatrix}.
+\]
+Then the \(k\)-th component of the product \(D(q)\ddot q\) is
+\[
+\left(D(q)\ddot q\right)_k
+=
+\sum_{j=1}^{n} d_{kj}(q)\ddot q_j.
+\]
+
+Next, define the matrix \(C(q,\dot q)\) such that its entries are given by
+\[
+C_{kj}(q,\dot q)=\sum_{i=1}^{n} c_{ijk}(q)\dot q_i.
+\]
+Then the \(k\)-th component of the velocity-dependent term becomes
+\[
+\left(C(q,\dot q)\dot q\right)_k
+=
+\sum_{j=1}^{n} C_{kj}(q,\dot q)\dot q_j
+=
+\sum_{j=1}^{n}\left(\sum_{i=1}^{n} c_{ijk}(q)\dot q_i\right)\dot q_j.
+\]
+Reordering the sums gives
+\[
+\left(C(q,\dot q)\dot q\right)_k
+=
+\sum_{i=1}^{n}\sum_{j=1}^{n} c_{ijk}(q)\dot q_i\dot q_j.
+\]
+
+The gravity vector may be written as
+\[
+g(q)=
+\begin{bmatrix}
+g_1(q)\\
+g_2(q)\\
+\vdots\\
+g_n(q)
+\end{bmatrix},
+\]
+so its \(k\)-th component is simply
+\[
+(g(q))_k=g_k(q).
+\]
+
+Similarly, the torque vector is
+\[
+\tau=
+\begin{bmatrix}
+\tau_1\\
+\tau_2\\
+\vdots\\
+\tau_n
+\end{bmatrix},
+\]
+whose \(k\)-th component is \(\tau_k\).
+
+Therefore, taking the \(k\)-th row of the matrix equation
+\[
+D(q)\ddot q + C(q,\dot q)\dot q + g(q)=\tau
+\]
+gives
+\[
+\sum_{j=1}^{n} d_{kj}(q)\ddot q_j
++
+\sum_{i=1}^{n}\sum_{j=1}^{n} c_{ijk}(q)\dot q_i\dot q_j
++
+g_k(q)
+=
+\tau_k,
+\qquad k=1,\dots,n,
+\]
+which is exactly the form given in equation (17).
+
+\subsubsection*{Physical Interpretation of the Terms}
+
+The matrix \(D(q)\) is the inertia matrix of the manipulator. It describes how the mass distribution of the robot affects the torques required to produce joint accelerations. The diagonal terms represent the inertia seen at each joint, while the off-diagonal terms represent inertial coupling between joints.
+
+The term \(C(q,\dot q)\dot q\) contains the Coriolis and centrifugal effects. These are velocity-dependent forces that appear when the manipulator is in motion.
+
+The vector \(g(q)\) represents the gravity loading of the manipulator. It contains the torques required to balance the robot against gravity at a given configuration.
+
+Finally, \(\tau\) is the vector of actuator torques applied at the joints.
+
+\subsection*{(d) Gravity vector and Coriolis terms}
+
+The remaining terms in the equations of motion are the Christoffel symbols \(c_{ijk}(q)\), which define the Coriolis/centrifugal matrix, and the gravity terms \(g_k(q)\).
+
+\subsubsection*{Christoffel Symbols}
+
+Let the inertia matrix from Task 2b be written as
+\[
+D(q)=
+\begin{bmatrix}
+d_{11}(q) & d_{12}(q) & d_{13}(q)\\
+d_{21}(q) & d_{22}(q) & d_{23}(q)\\
+d_{31}(q) & d_{32}(q) & d_{33}(q)
+\end{bmatrix}.
+\]
+The Christoffel symbols of the first kind are then given by
+\[
+c_{ijk}(q)
+=
+\frac{1}{2}
+\left(
+\frac{\partial d_{kj}(q)}{\partial q_i}
++
+\frac{\partial d_{ki}(q)}{\partial q_j}
+-
+\frac{\partial d_{ij}(q)}{\partial q_k}
+\right),
+\qquad i,j,k\in\{1,2,3\}.
+\]
+
+These coefficients are computed symbolically from the inertia matrix \(D(q)\). The Coriolis/centrifugal matrix is then formed from the Christoffel symbols according to
+\[
+C_{kj}(q,\dot q)=\sum_{i=1}^{3} c_{ijk}(q)\dot q_i,
+\]
+so that
+\[
+\left(C(q,\dot q)\dot q\right)_k
+=
+\sum_{i=1}^{3}\sum_{j=1}^{3} c_{ijk}(q)\dot q_i\dot q_j.
+\]
+
+The full set of Christoffel symbols \(c_{ijk}(q)\), the resulting matrix \(C(q,\dot q)\), and the product \(C(q,\dot q)\dot q\) were computed symbolically in SymPy from the inertia matrix \(D(q)\). Due to the size of the resulting expressions, the complete expanded forms are included in the submitted code and terminal output rather than written out by hand in the report.
+
+\subsubsection*{Gravity Terms}
+
+From Task 2a, the total potential energy of the manipulator is
+\[
+P
+=
+m_1 g \frac{L_1}{2}
++
+m_2 g \left(L_1+\frac{L_2}{2}\sin q_2\right)
++
+m_3 g \left(L_1+L_2 \sin q_2+\frac{L_3}{2}\sin(q_2+q_3)\right).
+\]
+
+The gravity terms are obtained from
+\[
+g_k(q)=\frac{\partial P}{\partial q_k}.
+\]
+
+Since the potential energy does not depend on \(q_1\),
+\[
+g_1(q)=\frac{\partial P}{\partial q_1}=0.
+\]
+
+For \(q_2\),
+\[
+g_2(q)=\frac{\partial P}{\partial q_2}
+=
+m_2 g \frac{L_2}{2}\cos q_2
++
+m_3 g \left(L_2\cos q_2+\frac{L_3}{2}\cos(q_2+q_3)\right).
+\]
+Hence,
+\[
+g_2(q)
+=
+\left(\frac{m_2}{2}+m_3\right)gL_2\cos q_2
++
+\frac{m_3}{2}gL_3\cos(q_2+q_3).
+\]
+
+For \(q_3\),
+\[
+g_3(q)=\frac{\partial P}{\partial q_3}
+=
+\frac{m_3}{2}gL_3\cos(q_2+q_3).
+\]
+
+Therefore, the gravity vector becomes
+\[
+g(q)=
+\begin{bmatrix}
+0\\[6pt]
+\left(\frac{m_2}{2}+m_3\right)gL_2\cos q_2
++\frac{m_3}{2}gL_3\cos(q_2+q_3)\\[8pt]
+\frac{m_3}{2}gL_3\cos(q_2+q_3)
+\end{bmatrix}.
+\]
+\subsection*{(e) Torque model}
+
+Using the inertia matrix \(D(q)\) from Task 2b, the Coriolis/centrifugal matrix \(C(q,\dot q)\) from Task 2d, and the gravity vector \(g(q)\) from Task 2d, the complete dynamical model of the three-link manipulator is obtained as
+\[
+\tau = D(q)\ddot q + C(q,\dot q)\dot q + g(q),
+\]
+where
+\[
+q=
+\begin{bmatrix}
+q_1\\
+q_2\\
+q_3
+\end{bmatrix},
+\qquad
+\dot q=
+\begin{bmatrix}
+\dot q_1\\
+\dot q_2\\
+\dot q_3
+\end{bmatrix},
+\qquad
+\ddot q=
+\begin{bmatrix}
+\ddot q_1\\
+\ddot q_2\\
+\ddot q_3
+\end{bmatrix},
+\qquad
+\tau=
+\begin{bmatrix}
+\tau_1\\
+\tau_2\\
+\tau_3
+\end{bmatrix}.
+\]
+
+Thus, the torque model may be written as
+\[
+\begin{bmatrix}
+\tau_1\\
+\tau_2\\
+\tau_3
+\end{bmatrix}
+=
+D(q)
+\begin{bmatrix}
+\ddot q_1\\
+\ddot q_2\\
+\ddot q_3
+\end{bmatrix}
++
+C(q,\dot q)
+\begin{bmatrix}
+\dot q_1\\
+\dot q_2\\
+\dot q_3
+\end{bmatrix}
++
+\begin{bmatrix}
+0\\[6pt]
+\left(\frac{m_2}{2}+m_3\right)gL_2\cos q_2
++\frac{m_3}{2}gL_3\cos(q_2+q_3)\\[8pt]
+\frac{m_3}{2}gL_3\cos(q_2+q_3)
+\end{bmatrix}.
+\]
+
+Here, \(D(q)\) is the inertia matrix derived in Task 2b, \(C(q,\dot q)\dot q\) contains the Coriolis and centrifugal terms derived from the Christoffel symbols in Task 2d, and \(g(q)\) is the gravity vector derived from the potential energy.
+
+The torque vector is computed symbolically in \texttt{IN4140\_oblig3\_task2\_johnrav.py}. Long SymPy printouts are not inlined in this PDF; a full listing from one run is in \texttt{task2\_terminal\_output.txt}.
+
+\end{document}
