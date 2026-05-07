@@ -504,5 +504,24 @@ From the steady-state value in Figure~\ref{fig:task3b_tuned_pd}, the joint posit
 \[
     e_{ss} = \theta_d - \theta(\infty) \approx 0.5 - 0.455 = 0.045~\text{rad}.
 \]
+
+\subsection*{(c) Is the steady-state error sufficiently small?}
+
+With the tuned PD controller in Task~3b, we obtained a steady-state error of approximately $e_{ss}\approx 0.045$~rad ($\approx 2.6^\circ$) for a step to $\theta_d=0.5$~rad. This indicates that a PD controller alone does not fully reject the constant gravity/bias torque, and therefore leaves a nonzero offset.
+
+To reduce this steady-state error, we extended the controller with an integral term and tuned a PID controller:
+\[
+    u(t) = K_P e(t) + K_I \int_0^t e(\tau)\,d\tau - K_D \dot{\theta}(t),
+\]
+where the integral action accumulates the persistent error and drives $e_{ss}\rightarrow 0$.
+
+With $K_P=9.0$, $K_D=2.0$ and $K_I=0.8$, the response improved and the joint position converged close to the set-point (Figure~\ref{fig:task3c_pid}). However, we also observed that the error started oscillating again and peaked a second time roughly 30 seconds after the initial step, illustrating the trade-off: a larger $K_I$ reduces steady-state error, but can introduce slow oscillations/instability if tuned too aggressively.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{state_plot_3c.png}
+    \caption{Task 3c: Adding integral action ($K_I=0.8$) reduces steady-state error, but a slow oscillation reappears later (error peaks again after $\sim$30 s).}
+    \label{fig:task3c_pid}
+\end{figure}
 \end{document}
 
