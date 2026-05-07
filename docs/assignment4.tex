@@ -462,7 +462,7 @@ Figure~\ref{fig:task3a_pd_step} shows the simulated step response for a set-poin
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.95\textwidth]{../state_plot3.png}
+    \includegraphics[width=0.95\textwidth]{state_plot_3a.png}
     \caption{Task 3a: Step response of Joint~2 with PD control.}
     \label{fig:task3a_pd_step}
 \end{figure}
@@ -477,5 +477,32 @@ Using the design requirement from Task~1d of $\omega_n=6$ and critical damping $
     t_s \approx \frac{4}{6} \approx 0.67~\text{s}.
 \]
 The simulated response does not match this value exactly. The main reasons are that the simulation/plant differs from the simplified linear model used in Task~1: the joint dynamics are nonlinear (e.g., gravity torque depends on $\theta$), the controller runs in discrete time at about 30~Hz, and the PD controller does not reject constant disturbances perfectly (gravity/bias), which results in a nonzero steady-state error and changes the effective closed-loop behavior compared to the idealized second-order design.
+
+\subsection*{(b) Controller tuning for lowest settling time without overshoot}
+
+To reduce the settling time while avoiding overshoot, the controller gains were tuned experimentally by increasing $K_P$ to speed up the response, and then increasing $K_D$ to add damping until the response no longer exceeded the set-point. A step to $\theta_d=0.5$~rad was used as the test input.
+
+After experimenting with several $(K_P,K_D)$ combinations, we found that the best performance (fast response without overshooting the set-point) was achieved with
+\[
+    K_P = 9.0,
+    \qquad
+    K_D = 2.0,
+    \qquad
+    K_I = 0.
+\]
+Figure~\ref{fig:task3b_tuned_pd} shows the resulting response. The position stays below the reference (no overshoot with respect to the set-point) and reaches its steady-state value quickly compared to the low-gain design from Task~1d.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{state_plot_3b.png}
+    \caption{Task 3b: Tuned PD response (set-point, position, error, and command).}
+    \label{fig:task3b_tuned_pd}
+\end{figure}
+
+\paragraph{Steady-state error.}
+From the steady-state value in Figure~\ref{fig:task3b_tuned_pd}, the joint position converges to approximately $\theta(\infty)\approx 0.455$~rad for a reference of $\theta_d=0.5$~rad. Thus the steady-state error is
+\[
+    e_{ss} = \theta_d - \theta(\infty) \approx 0.5 - 0.455 = 0.045~\text{rad}.
+\]
 \end{document}
 
