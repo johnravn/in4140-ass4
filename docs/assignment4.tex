@@ -7,6 +7,9 @@
 \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{verbatim}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\graphicspath{{../}{./}}
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
@@ -259,8 +262,19 @@ Figure~\ref{fig:plant_model} shows the independent joint plant model. The distur
 
 \begin{figure}[H]
     \centering
-    % Replace the filename below with your exported Figma diagram
-    \includegraphics[width=0.75\textwidth]{plant_model.png}
+    \begin{tikzpicture}[
+        block/.style={draw, rectangle, minimum height=1cm, minimum width=2.4cm},
+        sum/.style={draw, circle, inner sep=1pt, minimum size=6mm},
+        >=Latex
+    ]
+        \node[sum] (sum) {};
+        \node[block, right=1.2cm of sum] (plant) {$G(s)=\dfrac{1}{Js^2+Bs}$};
+        \draw[->] (sum) -- (plant);
+        \draw[->] (plant.east) -- ++(2.0cm,0) node[right] {$\Theta(s)$};
+        \draw[->] ++(-2.0cm,0) node[left] {$U(s)$} -- (sum);
+        \draw[->] (sum.north) ++(0,1.2cm) node[above] {$-D(s)$} -- (sum.north);
+        \node at (sum) {$\Sigma$};
+    \end{tikzpicture}
     \caption{Independent Joint~2 plant model with disturbance.}
     \label{fig:plant_model}
 \end{figure}
@@ -287,8 +301,28 @@ The complete closed-loop system is shown in Figure~\ref{fig:closed_loop_pd}. The
 
 \begin{figure}[H]
     \centering
-    % Replace the filename below with your exported Figma diagram
-    \includegraphics[width=0.95\textwidth]{closed_loop_pd.png}
+    \begin{tikzpicture}[
+        block/.style={draw, rectangle, minimum height=1cm, minimum width=2.6cm},
+        sum/.style={draw, circle, inner sep=1pt, minimum size=6mm},
+        >=Latex
+    ]
+        \node[sum] (sum) {};
+        \node[block, right=1.2cm of sum] (ctrl) {$C(s)=K_P+K_Ds$};
+        \node[sum, right=1.2cm of ctrl] (sum2) {};
+        \node[block, right=1.2cm of sum2] (plant) {$G(s)=\dfrac{1}{Js^2+Bs}$};
+
+        \draw[->] (sum) -- (ctrl);
+        \draw[->] (ctrl) -- (sum2);
+        \draw[->] (sum2) -- (plant);
+        \draw[->] (plant.east) -- ++(2.0cm,0) node[right] {$\Theta(s)$};
+
+        \draw[->] ++(-2.3cm,0) node[left] {$\Theta_d(s)$} -- (sum);
+        \draw[->] (plant.east) ++(1.0cm,0) |- (sum.south) node[pos=0.25, left] {$-$};
+
+        \draw[->] (sum2.north) ++(0,1.2cm) node[above] {$-D(s)$} -- (sum2.north);
+        \node at (sum) {$\Sigma$};
+        \node at (sum2) {$\Sigma$};
+    \end{tikzpicture}
     \caption{Closed-loop Joint~2 control system with PD controller.}
     \label{fig:closed_loop_pd}
 \end{figure}
@@ -443,7 +477,7 @@ and
 
 \section{Task 3 -- Simulation I (35\%)}
 
-In this task we control the position of Joint~2 in the CrustCrawler simulation using the provided ROS2 controller framework. The controller is implemented in `pid_assignment/src/pid_assignment/pid.py` and is exercised through the ROS2 node in `pid_assignment/src/pid_assignment/node.py`, which publishes effort commands to Joint~2 and publishes controller state for logging/plotting.
+In this task we control the position of Joint~2 in the CrustCrawler simulation using the provided ROS2 controller framework. The controller is implemented in \texttt{pid\_assignment/src/pid\_assignment/pid.py} and is exercised through the ROS2 node in \texttt{pid\_assignment/src/pid\_assignment/node.py}, which publishes effort commands to Joint~2 and publishes controller state for logging/plotting.
 
 \subsection*{(a) PD-controller implementation and response}
 
@@ -523,5 +557,114 @@ With $K_P=9.0$, $K_D=2.0$ and $K_I=0.8$, the response improved and the joint pos
     \caption{Task 3c: Adding integral action ($K_I=0.8$) reduces steady-state error, but a slow oscillation reappears later (error peaks again after $\sim$30 s).}
     \label{fig:task3c_pid}
 \end{figure}
+
+\subsection*{(d) Expanded block diagram and transfer function}
+
+In Task~3c, the steady-state error from the PD controller was reduced by adding an integral term. The controller was therefore changed from a PD controller to a PID controller:
+\begin{equation}
+    u(t)
+    =
+    K_P e(t)
+    +
+    K_I \int_0^t e(\tau)\,d\tau
+    +
+    K_D \dot e(t).
+\end{equation}
+In the implementation, the derivative term is applied on the measured joint velocity, but for the transfer function derivation we use the standard PID form.
+
+Taking the Laplace transform gives
+\begin{equation}
+    U(s)
+    =
+    \left(
+    K_P
+    +
+    \frac{K_I}{s}
+    +
+    K_Ds
+    \right)E(s).
+\end{equation}
+Thus, the PID controller transfer function is
+\begin{equation}
+    C(s)
+    =
+    K_P
+    +
+    K_Ds
+    +
+    \frac{K_I}{s}.
+\end{equation}
+
+The plant model from Task~1 is still
+\begin{equation}
+    G(s)
+    =
+    \frac{1}{Js^2+Bs}.
+\end{equation}
+The expanded closed-loop block diagram is therefore the same as in Task~1c, except that the controller block is replaced by the PID controller
+\[
+    C(s)=K_P+K_Ds+\frac{K_I}{s}.
+\]
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        block/.style={draw, rectangle, minimum height=1cm, minimum width=2.9cm},
+        sum/.style={draw, circle, inner sep=1pt, minimum size=6mm},
+        >=Latex
+    ]
+        \node[sum] (sum) {};
+        \node[block, right=1.2cm of sum] (ctrl) {$C(s)=K_P+K_Ds+\dfrac{K_I}{s}$};
+        \node[sum, right=1.2cm of ctrl] (sum2) {};
+        \node[block, right=1.2cm of sum2] (plant) {$G(s)=\dfrac{1}{Js^2+Bs}$};
+
+        \draw[->] (sum) -- (ctrl);
+        \draw[->] (ctrl) -- (sum2);
+        \draw[->] (sum2) -- (plant);
+        \draw[->] (plant.east) -- ++(2.0cm,0) node[right] {$\Theta(s)$};
+
+        \draw[->] ++(-2.3cm,0) node[left] {$\Theta_d(s)$} -- (sum);
+        \draw[->] (plant.east) ++(1.0cm,0) |- (sum.south) node[pos=0.25, left] {$-$};
+
+        \draw[->] (sum2.north) ++(0,1.2cm) node[above] {$-D(s)$} -- (sum2.north);
+        \node at (sum) {$\Sigma$};
+        \node at (sum2) {$\Sigma$};
+    \end{tikzpicture}
+    \caption{Closed-loop Joint~2 control system with PID controller.}
+    \label{fig:closed_loop_pid}
+\end{figure}
+
+For the reference-to-output transfer function, we set the disturbance $D(s)=0$. The closed-loop transfer function is
+\begin{equation}
+    \frac{\Theta(s)}{\Theta_d(s)}
+    =
+    \frac{C(s)G(s)}{1+C(s)G(s)}.
+\end{equation}
+Substituting
+\[
+    C(s)
+    =
+    K_P
+    +
+    K_Ds
+    +
+    \frac{K_I}{s}
+    =
+    \frac{K_Ds^2+K_Ps+K_I}{s}
+\]
+and
+\[
+    G(s)=\frac{1}{Js^2+Bs},
+\]
+gives
+\begin{equation}
+    \frac{\Theta(s)}{\Theta_d(s)}
+    =
+    \frac{K_Ds^2+K_Ps+K_I}
+    {Js^3+(B+K_D)s^2+K_Ps+K_I}.
+\end{equation}
+
+Therefore, adding integral action changes the closed-loop system from a second-order system to a third-order system. The benefit is that the integral term accumulates persistent error and can remove steady-state error caused by constant disturbances such as gravity. The drawback is that too much integral gain can introduce slow oscillations or instability, which was observed in Task~3c.
+
 \end{document}
 
