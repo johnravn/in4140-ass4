@@ -1,0 +1,8 @@
+prefix=/uio/hume/student-u88/johnrav/in4140/crust_crawler_simulator/devel
+
+Name: crustcrawler_description
+Description: Description of crustcrawler_description
+Version: 0.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

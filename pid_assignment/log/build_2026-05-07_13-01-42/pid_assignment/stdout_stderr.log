@@ -1,0 +1,27 @@
+running develop
+running egg_info
+creating src/pid_assignment.egg-info
+writing src/pid_assignment.egg-info/PKG-INFO
+writing dependency_links to src/pid_assignment.egg-info/dependency_links.txt
+writing entry points to src/pid_assignment.egg-info/entry_points.txt
+writing requirements to src/pid_assignment.egg-info/requires.txt
+writing top-level names to src/pid_assignment.egg-info/top_level.txt
+writing manifest file 'src/pid_assignment.egg-info/SOURCES.txt'
+reading manifest file 'src/pid_assignment.egg-info/SOURCES.txt'
+writing manifest file 'src/pid_assignment.egg-info/SOURCES.txt'
+running build_ext
+Creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/lib/python3.10/site-packages/pid-assignment.egg-link (link to src)
+Installing node script to /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/lib/pid_assignment
+
+Installed /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/src
+running symlink_data
+creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/ament_index
+creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/ament_index/resource_index
+creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/ament_index/resource_index/packages
+symbolically linking /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/resource/pid_assignment -> /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/ament_index/resource_index/packages
+symbolically linking /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/package.xml -> /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/pid_assignment
+creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/pid_assignment/launch
+symbolically linking /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/launch/pid.launch.py -> /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/pid_assignment/launch
+symbolically linking /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/launch/crustcrawler.perspective -> /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/pid_assignment/launch
+creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/pid_assignment/cfg
+symbolically linking /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/cfg/Pid.yaml -> /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/share/pid_assignment/cfg

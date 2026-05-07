@@ -1,0 +1,8 @@
+Metadata-Version: 2.1
+Name: pid-assignment
+Version: 0.0.1
+Summary: PID controller package for ROS2
+Maintainer: Adel Baselizadeh
+Maintainer-email: adelb@uio.no
+License: MIT
+Requires-Dist: setuptools

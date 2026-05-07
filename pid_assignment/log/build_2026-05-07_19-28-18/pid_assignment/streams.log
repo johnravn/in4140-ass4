@@ -1,0 +1,17 @@
+[1.039s] Invoking command in '/uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment': HISTTIMEFORMAT=%FT%T PS1=\u@in3140-ros2 \W> PYTHONPATH=/uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/build --no-deps symlink_data
+[1.362s] running develop
+[1.562s] running egg_info
+[1.585s] writing src/pid_assignment.egg-info/PKG-INFO
+[1.589s] writing dependency_links to src/pid_assignment.egg-info/dependency_links.txt
+[1.590s] writing entry points to src/pid_assignment.egg-info/entry_points.txt
+[1.591s] writing requirements to src/pid_assignment.egg-info/requires.txt
+[1.592s] writing top-level names to src/pid_assignment.egg-info/top_level.txt
+[1.626s] reading manifest file 'src/pid_assignment.egg-info/SOURCES.txt'
+[1.628s] writing manifest file 'src/pid_assignment.egg-info/SOURCES.txt'
+[1.644s] running build_ext
+[1.645s] Creating /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/lib/python3.10/site-packages/pid-assignment.egg-link (link to src)
+[1.648s] Installing node script to /uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/lib/pid_assignment
+[1.650s] 
+[1.651s] Installed /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/src
+[1.651s] running symlink_data
+[1.688s] Invoked command in '/uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment' returned '0': HISTTIMEFORMAT=%FT%T PS1=\u@in3140-ros2 \W> PYTHONPATH=/uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/prefix_override:/usr/lib/python3/dist-packages/colcon_core/task/python/colcon_distutils_commands:/uio/hume/student-u88/johnrav/in4140/pid_assignment/install/pid_assignment/lib/python3.10/site-packages:${PYTHONPATH} /usr/bin/python3 -W ignore:setup.py install is deprecated -W ignore:easy_install command is deprecated setup.py develop --editable --build-directory /uio/hume/student-u88/johnrav/in4140/pid_assignment/build/pid_assignment/build --no-deps symlink_data

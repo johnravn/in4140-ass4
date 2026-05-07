@@ -1,0 +1,8 @@
+prefix=/uio/hume/student-u88/johnrav/in4140/crust_crawler_simulator/install
+
+Name: crustcrawler_gazebo
+Description: Description of crustcrawler_gazebo
+Version: 0.0.1
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 
